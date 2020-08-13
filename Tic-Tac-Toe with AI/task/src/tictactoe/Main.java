@@ -161,6 +161,7 @@ public class Main {
         int i = board.getAvailableCoords()[randomRow][0];
         int j = board.getAvailableCoords()[randomRow][1];
         board.getField()[i][j] = board.getTurn();
+//        System.out.printf("%d %d, %c\n", i, j, board.getTurn());
     }
 
     public static void mediumMove(Board board) {
@@ -173,6 +174,75 @@ public class Main {
     }
 
     public static void hardMove(Board board) {
+        char xo = board.getTurn();
+        int[] score = miniMax(board, xo);
+
+        int i = board.getAvailableCoords()[score[1]][0];
+        int j = board.getAvailableCoords()[score[1]][1];
+        board.getField()[i][j] = xo;
+    }
+
+    public static int[] miniMax(Board board, char xo) {
+        int[] scores = new int[board.getECount()];
+
+        for (int k = 0; k < board.getECount(); k++) {
+            Board newBoard = new Board(board);
+            int i = board.getAvailableCoords()[k][0];
+            int j = board.getAvailableCoords()[k][1];
+            newBoard.getField()[i][j] = newBoard.getTurn();
+            newBoard.update();
+            switch (checkState(newBoard)) {
+                case DRAW:
+                    scores[k] = 0;
+                    break;
+                case X_WINS:
+                    if (xo == 'X') {
+                        scores[k] = 10;
+                    } else {
+                        scores[k] = -10;
+                    }
+                    break;
+                case O_WINS:
+                    if (xo == 'X') {
+                        scores[k] = -10;
+                    } else {
+                        scores[k] = 10;
+                    }
+                    break;
+                case UNFINISHED:
+                    newBoard.nextTurn();
+                    scores[k] = miniMax(newBoard, xo)[0];
+                    break;
+                default:
+                    System.out.println("Error!");
+                    break;
+            }
+        }
+
+        int max = -10;
+        int index_max = 0;
+        int min = 10;
+        int index_min = 0;
+        for (int i = 0; i < scores.length; i++) {
+            if (i == 0) {
+                max = scores[i];
+                min = scores[i];
+            } else {
+                if (max < scores[i]) {
+                    max = scores[i];
+                    index_max = i;
+                }
+                if (min > scores[i]) {
+                    min = scores[i];
+                    index_min = i;
+                }
+            }
+        }
+        if (board.getTurn() == xo) {
+            return new int[] {max, index_max};
+        } else {
+            return new int[] {min, index_min};
+        }
 
     }
 
@@ -260,6 +330,25 @@ class Board {
         initField();
         update();
         turn = 'X';
+    }
+
+    Board(Board board) {
+        for (int i = 0; i < board.field.length; i++) {
+            field[i] = Arrays.copyOf(board.field[i], 3);
+        }
+
+        for (int i = 0; i < board.expandField.length; i++) {
+            expandField[i] = Arrays.copyOf(board.expandField[i], 3);
+        }
+
+        eCount = board.eCount;
+
+        availableCoords = new int[eCount][2];
+        for (int i = 0; i < board.availableCoords.length; i++) {
+            availableCoords[i] = Arrays.copyOf(board.availableCoords[i], 2);
+        }
+
+        turn = board.turn;
     }
 
     public void initField() {
